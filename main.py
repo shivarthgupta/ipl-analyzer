@@ -2,8 +2,11 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-# Load data
-df = pd.read_csv("data/IPL.csv", low_memory=False)
+import kagglehub
+
+path = kagglehub.dataset_download("shivarthgupta/ipl-dataset")
+
+df = pd.read_csv(path + "/IPL.csv")
 
 # Drop unwanted column
 df = df.drop(columns=['Unnamed: 0'])
