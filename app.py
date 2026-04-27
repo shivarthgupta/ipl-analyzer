@@ -5,6 +5,22 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import LabelEncoder
 
 # =========================
+# TEAM LOGOS (LOCAL FILES)
+# =========================
+team_logos = {
+    "Mumbai Indians": "logos/mi.png",
+    "Punjab Kings": "logos/pbks.png",
+    "Royal Challengers Bangalore": "logos/rcb.png",
+    "Chennai Super Kings": "logos/csk.png",
+    "Kolkata Knight Riders": "logos/kkr.png",
+    "Delhi Capitals": "logos/dc.png",
+    "Rajasthan Royals": "logos/rr.png",
+    "Sunrisers Hyderabad": "logos/srh.png",
+    "Gujarat Titans": "logos/gt.png",
+    "Lucknow Super Giants": "logos/lsg.png"
+}
+
+# =========================
 # 🎨 UI STYLE
 # =========================
 st.markdown("""
@@ -24,7 +40,6 @@ df = pd.read_csv("data/IPL.csv", low_memory=False)
 df = df.drop(columns=['Unnamed: 0'])
 
 matches_df = df.drop_duplicates('match_id')
-
 teams = df['batting_team'].dropna().unique()
 
 # =========================
@@ -36,69 +51,81 @@ season = st.sidebar.selectbox("Season", sorted(df['season'].dropna().unique()), 
 venue = st.sidebar.selectbox("Venue", df['venue'].dropna().unique(), key="venue")
 
 # =========================
-# TEAM SELECTION
+# TEAM SELECTION (FIXED)
 # =========================
 team = st.selectbox("Select Team", teams, key="main_team")
+
+# Fix name mismatch
+team_fixed = team.replace("Bengaluru", "Bangalore")
+
 team_data = df[df['batting_team'] == team]
+
+# =========================
+# LOGO DISPLAY (FIXED)
+# =========================
+logo_path = team_logos.get(team_fixed)
+
+col1, col2 = st.columns([1, 4])
+
+with col1:
+    if logo_path:
+        st.image(logo_path, width=100)
+    else:
+        st.warning("Logo not found")
+
+with col2:
+    st.title(f"{team} Dashboard")
 
 # =========================
 # TEAM STATS
 # =========================
 total_runs = team_data['runs_total'].sum()
 matches = team_data['match_id'].nunique()
-avg_score = total_runs / matches
 
 wins_df = matches_df[matches_df['match_won_by'] == team]
 wins = wins_df['match_id'].nunique()
-toss_help = wins_df[wins_df['toss_winner'] == team]['match_id'].nunique()
 
 total_matches = matches_df[
     (matches_df['batting_team'] == team) | 
     (matches_df['bowling_team'] == team)
 ]['match_id'].nunique()
 
-win_pct = (wins / total_matches) * 100
+win_pct = (wins / total_matches) * 100 if total_matches > 0 else 0
 
-# KPI CARDS
 col1, col2, col3, col4 = st.columns(4)
 col1.metric("🏏 Runs", total_runs)
 col2.metric("🎯 Matches", matches)
 col3.metric("🏆 Wins", wins)
-col4.metric("📊 Win %", round(win_pct,2))
-
-st.write(f"Toss helped win: {toss_help}")
+col4.metric("📊 Win %", round(win_pct, 2))
 
 # =========================
-# PLAYER COMPARISON
-# =========================
-st.subheader("⚔️ Player Comparison")
-
-players = df['batter'].dropna().unique()
-
-p1 = st.selectbox("Player 1", players, key="p1")
-p2 = st.selectbox("Player 2", players, key="p2")
-
-def player_stats(player):
-    data = df[df['batter'] == player]
-    runs = data['runs_batter'].sum()
-    balls = len(data)
-    sr = (runs / balls) * 100 if balls > 0 else 0
-    return runs, sr
-
-r1, sr1 = player_stats(p1)
-r2, sr2 = player_stats(p2)
-
-st.write(f"{p1} → Runs: {r1}, SR: {round(sr1,2)}")
-st.write(f"{p2} → Runs: {r2}, SR: {round(sr2,2)}")
-
-# =========================
-# TEAM VS TEAM
+# TEAM VS TEAM (FIXED)
 # =========================
 st.subheader("🆚 Team vs Team")
 
 team1 = st.selectbox("Team 1", teams, key="team1")
 team2 = st.selectbox("Team 2", teams, key="team2")
 
+team1_fixed = team1.replace("Bengaluru", "Bangalore")
+team2_fixed = team2.replace("Bengaluru", "Bangalore")
+
+col1, col2 = st.columns(2)
+
+with col1:
+    logo1 = team_logos.get(team1_fixed)
+    if logo1:
+        st.image(logo1, width=100)
+    st.write(team1)
+
+with col2:
+    logo2 = team_logos.get(team2_fixed)
+    if logo2:
+        st.image(logo2, width=100)
+    st.write(team2)
+
+# =========================
+# HEAD TO HEAD
+# =========================
 h2h = matches_df[
     ((matches_df['batting_team'] == team1) & (matches_df['bowling_team'] == team2)) |
     ((matches_df['batting_team'] == team2) & (matches_df['bowling_team'] == team1))
@@ -122,18 +149,7 @@ fig = px.bar(x=batsmen.values, y=batsmen.index, orientation='h')
 st.plotly_chart(fig)
 
 # =========================
-# 🏏 BOUNDARY DISTRIBUTION
-# =========================
-st.subheader("🏏 Boundary Distribution")
-
-boundaries = team_data[team_data['runs_batter'].isin([4,6])]
-boundary_count = boundaries['runs_batter'].value_counts()
-
-fig = px.pie(values=boundary_count.values, names=boundary_count.index)
-st.plotly_chart(fig)
-
-# =========================
-# 📈 SEASON PERFORMANCE (FINAL FIX)
+# SEASON PERFORMANCE
 # =========================
 st.subheader("📈 Season Performance")
 
@@ -142,34 +158,19 @@ team_season = matches_df[
     (matches_df['bowling_team'] == team)
 ].copy()
 
-team_season = team_season.dropna(subset=['season'])
-team_season['season'] = team_season['season'].astype(str)
-team_season['season'] = team_season['season'].str.split('/').str[0]
+team_season['season'] = team_season['season'].astype(str).str.split('/').str[0]
 team_season['season'] = pd.to_numeric(team_season['season'], errors='coerce')
 team_season = team_season.dropna(subset=['season'])
-team_season['season'] = team_season['season'].astype(int)
 
 wins_by_season = team_season.groupby('season')['match_won_by'].apply(
     lambda x: (x == team).sum()
-).sort_index()
-
-fig = px.line(
-    x=wins_by_season.index,
-    y=wins_by_season.values,
-    markers=True,
-    title=f"{team} Wins by Season"
 )
 
-fig.update_layout(
-    plot_bgcolor="#0b0f1a",
-    paper_bgcolor="#0b0f1a",
-    font=dict(color="white")
-)
-
+fig = px.line(x=wins_by_season.index, y=wins_by_season.values, markers=True)
 st.plotly_chart(fig)
 
 # =========================
-# 🤖 MATCH PREDICTION (FIXED)
+# MATCH PREDICTION
 # =========================
 st.subheader("🤖 Match Prediction")
 
