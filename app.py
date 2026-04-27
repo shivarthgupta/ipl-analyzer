@@ -36,7 +36,6 @@ h1, h2, h3 {color: #00ffcc;}
 st.title("🏏 IPL Advanced Data Analyzer")
 
 # =========================
-<<<<<<< HEAD
 # LOAD DATA (FIXED 🔥)
 # =========================
 @st.cache_data
@@ -45,16 +44,6 @@ def load_data():
     files = os.listdir(path)
     csv_file = [f for f in files if f.endswith(".csv")][0]
     df = pd.read_csv(os.path.join(path, csv_file), low_memory=False)
-=======
-# LOAD DATA (FINAL FIX ✅)
-# =========================
-@st.cache_data
-def load_data():
-    # 🔥 REPLACE THIS URL WITH YOUR DATASET LINK
-    url = "https://raw.githubusercontent.com/shivarthgupta/ipl-analyzer/main/data/IPL.csv"
-    
-    df = pd.read_csv(url, low_memory=False)
->>>>>>> be7e260
     
     if 'Unnamed: 0' in df.columns:
         df = df.drop(columns=['Unnamed: 0'])
