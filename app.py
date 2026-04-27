@@ -3,8 +3,6 @@ import pandas as pd
 import plotly.express as px
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import LabelEncoder
-import kagglehub
-import os
 
 # =========================
 # TEAM LOGOS (LOCAL FILES)
@@ -36,14 +34,14 @@ h1, h2, h3 {color: #00ffcc;}
 st.title("🏏 IPL Advanced Data Analyzer")
 
 # =========================
-# LOAD DATA (FIXED 🔥)
+# LOAD DATA (FINAL FIX ✅)
 # =========================
 @st.cache_data
 def load_data():
-    path = kagglehub.dataset_download("shivarthgupta/ipl-dataset")
-    files = os.listdir(path)
-    csv_file = [f for f in files if f.endswith(".csv")][0]
-    df = pd.read_csv(os.path.join(path, csv_file), low_memory=False)
+    # 🔥 REPLACE THIS URL WITH YOUR DATASET LINK
+    url = "https://raw.githubusercontent.com/shivarthgupta/ipl-analyzer/main/data/IPL.csv"
+    
+    df = pd.read_csv(url, low_memory=False)
     
     if 'Unnamed: 0' in df.columns:
         df = df.drop(columns=['Unnamed: 0'])
@@ -68,6 +66,7 @@ venue = st.sidebar.selectbox("Venue", df['venue'].dropna().unique(), key="venue"
 # =========================
 team = st.selectbox("Select Team", teams, key="main_team")
 team_fixed = team.replace("Bengaluru", "Bangalore")
+
 team_data = df[df['batting_team'] == team]
 
 # =========================
@@ -184,4 +183,5 @@ for col in input_df.columns:
     input_df[col] = le_dict[col].transform(input_df[col])
 
 winner = le_dict['match_won_by'].inverse_transform(model.predict(input_df))
+
 st.success(f"Predicted Winner: {winner[0]}")
